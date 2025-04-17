@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Maganatti Tech Solution - Calendar</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- html2canvas & jsPDF for download -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <style>
+    :root {
+      --primary-blue: #0058a8;
+      --accent-orange: #f48a26;
+    }
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f8f9fa;
+      padding: 20px;
+    }
+    .month {
+      border: 2px solid var(--primary-blue);
+      border-radius: 12px;
+      padding: 12px;
+      background-color: #fff;
+      transition: transform 0.2s;
+    }
+    .month:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    .month h5 {
+      text-transform: uppercase;
+      font-weight: bold;
+      background-color: var(--primary-blue);
+      color: #fff;
+      margin: 0 -12px 10px;
+      padding: 8px 0;
+      border-top-left-radius: 10px;
+      border-top-right-radius: 10px;
+    }
+    .days {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      font-size: 0.85rem;
+      text-align: center;
+      gap: 2px;
+    }
+    .day-name {
+      font-weight: bold;
+      color: var(--primary-blue);
+      border-bottom: 2px solid var(--accent-orange);
+      padding-bottom: 6px;
+    }
+    .day {
+      padding: 6px;
+      height: 32px;
+      border: 1px solid #eee;
+      border-radius: 4px;
+    }
+    .day:hover {
+      background-color: var(--accent-orange);
+      color: #fff;
+      cursor: default;
+    }
+    #yearDisplay {
+      color: var(--primary-blue);
+      font-size: 2rem;
+      font-weight: bold;
+    }
+    .btn-primary-outline {
+      color: var(--primary-blue);
+      border-color: var(--primary-blue);
+    }
+    .btn-primary-outline:hover {
+      background-color: var(--primary-blue);
+      color: #fff;
+    }
+    .btn-secondary-outline {
+      color: var(--accent-orange);
+      border-color: var(--accent-orange);
+    }
+    .btn-secondary-outline:hover {
+      background-color: var(--accent-orange);
+      color: #fff;
+    }
+    .services h3 {
+      color: var(--primary-blue);
+    }
+    .list-group-item {
+      border-color: var(--primary-blue);
+    }
+    .controls .btn-outline-primary { /* Previous/Next */
+      composes: btn-primary-outline;
+    }
+    .controls .btn-outline-secondary { /* Download PDF */
+      composes: btn-secondary-outline;
+    }
+    @media print {
+      .controls { display: none; }
+      .services { display: none; }
+      body { padding: 0; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container text-center mb-4">
+    <img src="maganatti-logo.png" alt="Maganatti Tech Logo" class="img-fluid mb-2" style="max-height: 100px;">
+    <h1 class="fw-bold" style="color: var(--primary-blue);">Maganatti Tech Solution</h1>
+    <p class="fst-italic" style="color: var(--accent-orange);">"Service You Can Trust"</p>
+  </div>
+
+  <div class="container controls mb-3 d-flex justify-content-center gap-2">
+    <button id="prevYear" class="btn btn-outline-primary btn-primary-outline">&laquo; Previous Year</button>
+    <button id="printBtn" class="btn btn-outline-success">Print Calendar</button>
+    <button id="downloadBtn" class="btn btn-outline-secondary btn-secondary-outline">Download PDF</button>
+    <button id="nextYear" class="btn btn-outline-primary btn-primary-outline">Next Year &raquo;</button>
+  </div>
+
+  <div class="container mb-5 text-center">
+    <h2 id="yearDisplay"></h2>
+  </div>
+
+  <div class="container">
+    <div id="calendar" class="row g-4"></div>
+  </div>
+
+  <section class="container services mt-5">
+    <h3 class="text-center mb-3">Our Services</h3>
+    <ul class="list-group list-group-flush w-75 mx-auto">
+      <li class="list-group-item">✅ Website Design & Development</li>
+      <li class="list-group-item">✅ Graphics Design (Logos, Posters, Banners)</li>
+      <li class="list-group-item">✅ IT Consultancy & Networking</li>
+      <li class="list-group-item">✅ Computer Repair & Maintenance</li>
+      <li class="list-group-item">✅ Digital Marketing</li>
+    </ul>
+  </section>
+
+  <script>
+    const calendarContainer = document.getElementById("calendar");
+    const yearDisplay = document.getElementById("yearDisplay");
+    let currentYear = new Date().getFullYear();
+
+    const months = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+    const dayNames = ["S","M","T","W","T","F","S"];
+
+    function renderCalendar(year) {
+      calendarContainer.innerHTML = '';
+      yearDisplay.textContent = year;
+      for (let m = 0; m < 12; m++) {
+        const firstDay = new Date(year, m, 1).getDay();
+        const daysInMonth = new Date(year, m + 1, 0).getDate();
+
+        const col = document.createElement('div');
+        col.className = 'col-md-4';
+        const monthDiv = document.createElement('div');
+        monthDiv.className = 'month';
+        const title = document.createElement('h5');
+        title.textContent = months[m];
+        monthDiv.appendChild(title);
+
+        const grid = document.createElement('div');
+        grid.className = 'days';
+        dayNames.forEach(d => {
+          const dn = document.createElement('div'); dn.className = 'day-name'; dn.textContent = d; grid.appendChild(dn);
+        });
+        for (let i=0;i<firstDay;i++){ const empty=document.createElement('div'); empty.className='day'; grid.appendChild(empty); }
+        for (let d=1; d<=daysInMonth; d++){ const cd=document.createElement('div'); cd.className='day'; cd.textContent=d; grid.appendChild(cd); }
+
+        monthDiv.appendChild(grid);
+        col.appendChild(monthDiv);
+        calendarContainer.appendChild(col);
+      }
+    }
+
+    document.getElementById('prevYear').addEventListener('click', ()=>{ currentYear--; renderCalendar(currentYear); });
+    document.getElementById('nextYear').addEventListener('click', ()=>{ currentYear++; renderCalendar(currentYear); });
+    document.getElementById('printBtn').addEventListener('click', ()=>{ window.print(); });
+    document.getElementById('downloadBtn').addEventListener('click', async ()=>{
+      const { jsPDF } = window.jspdf;
+      const pdf = new jsPDF('p','pt','a4');
+      const element = document.querySelector('#calendar');
+      const canvas = await html2canvas(element, { scale: 2 });
+      const imgData = canvas.toDataURL('image/png');
+      const imgProps = pdf.getImageProperties(imgData);
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+      pdf.save(`calendar-${currentYear}.pdf`);
+    });
+
+    // Initial render
+    renderCalendar(currentYear);
+  </script>
+</body>
+</html>
